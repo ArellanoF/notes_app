@@ -1,22 +1,33 @@
+@use "sass:color";
+
 body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   background: #fafafa;
-  margin: 0;
   display: flex;
   place-items: center;
   min-height: 100vh;
+}
+
+#root{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 textarea,
 input {
   font-family: inherit; 
 }
+
 .notes-main-screen {
-  padding: 3rem 5rem 3rem 5rem;
+  padding: 3rem 5rem;
   font-family: "Segoe UI", sans-serif;
   margin-top: 3rem;
 }
+
 .loading {
   font-size: 1.2rem;
   text-align: center;
@@ -25,10 +36,11 @@ input {
 
 .notes-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(380px, 380px));
   gap: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
+  justify-content: center;
 }
 
 .note-card {
@@ -38,6 +50,9 @@ input {
   padding: 1.5rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
     transform: translateY(-4px);
@@ -54,11 +69,15 @@ input {
     font-size: 0.95rem;
     color: #555;
     margin-bottom: 1rem;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .note-date {
     font-size: 0.8rem;
     color: #999;
+    margin-top: auto;
   }
 }
 
@@ -68,7 +87,7 @@ input {
 }
 
 .button-pagination {
-  margin: 0rem 2rem;
+  margin: 0 2rem;
 }
 
 .add-note-container {
@@ -81,26 +100,30 @@ input {
   color: white;
   background-color: green;
 }
+
 .button-delete {
-  display: "flex";
-  align-items: "center";
-  gap: "4px";
+  display: flex;
+  align-items: center;
+  gap: 4px;
   color: white;
   background-color: red;
   margin-left: 1rem;
+  
   &:hover {
     background-color: darkred;
   }
 }
+
 .button-update {
-  display: "flex";
-  align-items: "center";
-  gap: "4px";
+  display: flex;
+  align-items: center;
+  gap: 4px;
   color: white;
   background-color: #d9b105;
   margin-left: 1rem;
+  
   &:hover {
-    background-color: dark;
+    background-color: color.adjust(#d9b105, $lightness: -20%);
   }
 }
 
@@ -118,11 +141,13 @@ input {
   background: rgba(232, 232, 230, 0.9);
 }
 
-.search-container input {
-  padding: 8px;
-  font-size: 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.5);
+.search-container {
+  input {
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+  }
 }
 
 .spinner {
@@ -178,21 +203,26 @@ input {
 
 .form-group {
   margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.form-group input,
-.form-group textarea {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    max-width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
 }
 
 .modal-footer {
@@ -221,19 +251,6 @@ input {
   color: white;
 }
 
-.form-group {
-  width: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
 .note-header {
   display: flex;
   align-items: flex-start;
@@ -251,13 +268,13 @@ input {
 
 .note-title-container {
   flex: 1;
-}
 
-.note-title {
-  margin: 0;
-  font-size: 1.1em;
-  font-weight: 600;
-  line-height: 1.3;
+  .note-title {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    line-height: 1.3;
+  }
 }
 
 .loading-spinner {
@@ -276,10 +293,10 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
   margin-left: 0.6rem;
-}
 
-button:hover {
-  border-color: #ccc;
+  &:hover {
+    border-color: #ccc;
+  }
 }
 
 .searchLogo-container {
@@ -294,13 +311,12 @@ button:hover {
   background-size: cover;
 }
 
-.logo-container{
+.logo-container {
   margin-left: 1rem;
 }
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-
-

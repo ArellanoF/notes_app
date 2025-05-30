@@ -10,6 +10,16 @@ import NoteModal from './components/NoteModal';
 import SearchBar from './components/SearchBar';
 import logoSrc from './assets/logo.png';
 
+const getErrorMessage = (error: any): string => {
+  return error.response?.data?.message || 
+         error.message || 
+         'Ha ocurrido un error inesperado';
+};
+
+const getSuccessMessage = (response: any, defaultMessage: string): string => {
+  return response.data?.message || defaultMessage;
+};
+
 const NotesMainScreen = () => {
   const [data, setData] = useState<DataType>({
     data: [],
@@ -23,6 +33,7 @@ const NotesMainScreen = () => {
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [statusCode, setStatusCode] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [page, setPage] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchInput, setSearchInput] = useState<string>('');
@@ -38,15 +49,20 @@ const NotesMainScreen = () => {
 
   const loadNotes = (page: number, search: string = '') => {
     setLoading(true);
+    setErrorMessage('');
+    setStatusCode(null);
+    
     getAllNotes(page, perPage, search)
       .then(({ data }) => {
         setData(data);
         setLoading(false);
-        setStatusCode(null);
       })
       .catch((e: any) => {
-        setStatusCode(e.status);
+        const errorMsg = getErrorMessage(e);
+        setStatusCode(e.response?.status || e.status || 500);
+        setErrorMessage(errorMsg);
         setLoading(false);
+        console.error('Error al cargar notas:', errorMsg);
       });
   };
 
@@ -68,9 +84,11 @@ const NotesMainScreen = () => {
     }
     setShowAddModal(false);
     setLoading(true);
+    setErrorMessage('');
+    
     createNote(newNote)
       .then((response) => {
-        const message = response.data?.message || 'Nota creada exitosamente';
+        const message = getSuccessMessage(response, 'Nota creada exitosamente');
         setNewNote({ title: '', text: '' });
         loadNotes(1, searchTerm);
         setPage(1);
@@ -78,9 +96,12 @@ const NotesMainScreen = () => {
         setLoading(false);
       })
       .catch((e: any) => {
-        console.error('Error al crear nota:', e);
+        const errorMsg = getErrorMessage(e);
         setStatusCode(e.response?.status || 500);
+        setErrorMessage(errorMsg);
         setLoading(false);
+        console.error('Error al crear nota:', errorMsg);
+        alert(`Error al crear nota: ${errorMsg}`);
       });
   };
 
@@ -90,11 +111,14 @@ const NotesMainScreen = () => {
       return;
     }
     if (editingNoteId === null) return;
+    
     setShowAddModal(false);
     setLoading(true);
+    setErrorMessage('');
+    
     updateNote(editingNoteId, newNote)
       .then((response) => {
-        const message = response.data?.message || 'Nota actualizada exitosamente';
+        const message = getSuccessMessage(response, 'Nota actualizada exitosamente');
         setNewNote({ title: '', text: '' });
         setIsEditing(false);
         setEditingNoteId(null);
@@ -104,9 +128,12 @@ const NotesMainScreen = () => {
         setLoading(false);
       })
       .catch((e: any) => {
-        console.error('Error al actualizar nota:', e);
+        const errorMsg = getErrorMessage(e);
         setStatusCode(e.response?.status || 500);
+        setErrorMessage(errorMsg);
         setLoading(false);
+        console.error('Error al actualizar nota:', errorMsg);
+        alert(`Error al actualizar nota: ${errorMsg}`);
       });
   };
 
@@ -119,6 +146,8 @@ const NotesMainScreen = () => {
 
   const handleDeleteNote = (id: number) => {
     setLoading(true);
+    setErrorMessage('');
+    
     deleteNote(id)
       .then(() => {
         setData((prevData) => ({
@@ -129,9 +158,12 @@ const NotesMainScreen = () => {
         setLoading(false);
       })
       .catch((e: any) => {
-        console.error('Error al eliminar nota:', e);
+        const errorMsg = getErrorMessage(e);
         setStatusCode(e.response?.status || 500);
+        setErrorMessage(errorMsg);
         setLoading(false);
+        console.error('Error al eliminar nota:', errorMsg);
+        alert(`Error al eliminar nota: ${errorMsg}`);
       });
   };
 
@@ -164,7 +196,7 @@ const NotesMainScreen = () => {
           handleClearSearch={handleClearSearch}
         />
         <div className="logo-container">
-          <img src={logoSrc} alt="Logo" className="logo" />
+          <a href="https://www.doonamis.com/" target='_blank'><img src={logoSrc} alt="Logo" className="logo" /></a>
         </div>
         </div>
       </div>
@@ -181,18 +213,25 @@ const NotesMainScreen = () => {
             setShowAddModal={setShowAddModal}
             handleDeleteNote={(id: string | number) => handleDeleteNote(Number(id))}
           />
-          <PaginationControls
-            currentPage={data.current_page}
-            lastPage={data.last_page}
-            hasPrev={!!data.links.prev}
-            hasNext={!!data.links.next}
-            onPrev={goToPrevPage}
-            onNext={goToNextPage}
-          />
+         {data.last_page > 1 && (
+            <PaginationControls
+              currentPage={data.current_page}
+              lastPage={data.last_page}
+              hasPrev={!!data.links.prev}
+              hasNext={!!data.links.next}
+              onPrev={goToPrevPage}
+              onNext={goToNextPage}
+            />
+          )}
         </>
       )}
 
-      {statusCode && <p className="error">Error cargando notas. Código: {statusCode}</p>}
+      {statusCode && (
+        <div className="error">
+          <p>Error cargando notas. Código: {statusCode}</p>
+          {errorMessage && <p>Mensaje: {errorMessage}</p>}
+        </div>
+      )}
 
       <NoteModal
         show={showAddModal}

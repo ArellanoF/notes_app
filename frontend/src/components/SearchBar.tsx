@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, CircleX  } from 'lucide-react';
 import { SearchBarProps } from '../interfaces/interface';
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -23,11 +23,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
         }}
       />
       <button className="button-search" onClick={handleSearch}>
-        <Search size={18} />
+        <Search size={24} />
       </button>
       {searchTerm && (
         <button className="button-clear" onClick={handleClearSearch}>
-          ✕
+          <CircleX  size={24} />
         </button>
       )}
     </div>

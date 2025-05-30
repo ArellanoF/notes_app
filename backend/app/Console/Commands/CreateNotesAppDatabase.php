@@ -30,15 +30,12 @@ class CreateNotesAppDatabase extends Command
     public function handle()
     {
         try {
-            // Obtener la conexión de la base de datos (sin especificar una base de datos)
             $connection = config('database.default');
-            $dbName = 'notes_appf';
+            $dbName = 'notes_app';
 
-            // Crear la base de datos
             $this->info("Creando la base de datos $dbName...");
             DB::statement("CREATE DATABASE IF NOT EXISTS $dbName");
 
-            // Cambiar la conexión a la nueva base de datos
             config(["database.connections.$connection.database" => $dbName]);
             DB::purge($connection);
             DB::reconnect($connection);
