@@ -21,8 +21,7 @@ public function index(Request $request): JsonResponse
 
     if ($search) {
         $query->where(function ($q) use ($search) {
-            $q->where('title', 'like', "%{$search}%")
-              ->orWhere('text', 'like', "%{$search}%");
+            $q->where('title', 'like', "%{$search}%");
         });
     }
 
