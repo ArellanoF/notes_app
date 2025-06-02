@@ -156,6 +156,8 @@ const NotesMainScreen = () => {
           total: prevData.total - 1,
         }));
         setLoading(false);
+        alert('Nota eliminada exitosamente');
+        loadNotes(page, searchTerm);
       })
       .catch((e: any) => {
         const errorMsg = getErrorMessage(e);
