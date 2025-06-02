@@ -6,43 +6,53 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Note;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class NotaController extends Controller
 {
     /**
      * Display a paginated listing of the resource.
      */
-public function index(Request $request): JsonResponse
-{
-    $perPage = $request->get('per_page', 6);
-    $search = $request->get('search');
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            $perPage = $request->get('per_page', 6);
+            $search = $request->get('search');
 
-    $query = Note::query();
+            $query = Note::query();
 
-    if ($search) {
-        $query->where(function ($q) use ($search) {
-            $q->where('title', 'like', "%{$search}%");
-        });
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%");
+                });
+            }
+            $query->orderBy('created_at', 'DESC');
+
+            $notes = $query->paginate($perPage);
+
+            return response()->json([
+                'data' => $notes->items(),
+                'current_page' => $notes->currentPage(),
+                'last_page' => $notes->lastPage(),
+                'per_page' => $notes->perPage(),
+                'total' => $notes->total(),
+                'from' => $notes->firstItem(),
+                'to' => $notes->lastItem(),
+                'links' => [
+                    'first' => $notes->url(1),
+                    'last' => $notes->url($notes->lastPage()),
+                    'prev' => $notes->previousPageUrl(),
+                    'next' => $notes->nextPageUrl(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => 'Notes could not be obtained'
+            ], 500);
+        }
     }
-
-    $notes = $query->paginate($perPage);
-
-    return response()->json([
-        'data' => $notes->items(),
-        'current_page' => $notes->currentPage(),
-        'last_page' => $notes->lastPage(),
-        'per_page' => $notes->perPage(),
-        'total' => $notes->total(),
-        'from' => $notes->firstItem(),
-        'to' => $notes->lastItem(),
-        'links' => [
-            'first' => $notes->url(1),
-            'last' => $notes->url($notes->lastPage()),
-            'prev' => $notes->previousPageUrl(),
-            'next' => $notes->nextPageUrl(),
-        ]
-    ], 200);
-}
 
 
     /**
@@ -50,18 +60,31 @@ public function index(Request $request): JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'text' => 'string',
-           
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'title' => 'required|string|max:255',
+                'text' => 'string',
 
-        $note = Note::create($validatedData);
-        
-        return response()->json([
-            'message' => 'Nota creada exitosamente',
-            'data' => $note
-        ], 201);
+            ]);
+
+            $note = Note::create($validatedData);
+
+            return response()->json([
+                'message' => 'Note created successfully',
+                'date' => $note
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => 'Invalid validation data',
+                'message' => 'The data provided is not valid',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => 'The note could not be created'
+            ], 500);
+        }
     }
 
     /**
@@ -69,17 +92,23 @@ public function index(Request $request): JsonResponse
      */
     public function show(string $id): JsonResponse
     {
-        $note = Note::find($id);
-        
-        if (!$note) {
+        try {
+            $note = Note::findOrFail($id);
+
             return response()->json([
-                'message' => 'Nota no encontrada'
+                'data' => $note
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Resource not found',
+                'message' => 'The requested note does not exist'
             ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => 'The grade could not be obtained'
+            ], 500);
         }
-        
-        return response()->json([
-            'data' => $note
-        ], 200);
     }
 
     /**
@@ -87,25 +116,37 @@ public function index(Request $request): JsonResponse
      */
     public function update(Request $request, string $id): JsonResponse
     {
-        $note = Note::find($id);
-        
-        if (!$note) {
+        try {
+            $note = Note::findOrFail($id);
+
+            $validatedData = $request->validate([
+                'title' => 'sometimes|required|string|max:255',
+                'text' => 'sometimes|required|string',
+            ]);
+
+            $note->update($validatedData);
+
             return response()->json([
-                'message' => 'Nota no encontrada'
+                'message' => 'Note updated successfully',
+                'date' => $note->fresh()
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Resource not found',
+                'message' => 'The note you are trying to update does not exist'
             ], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => 'Invalid validation data',
+                'message' => 'The data provided is not valid',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => 'The note could not be updated'
+            ], 500);
         }
-
-        $validatedData = $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'text' => 'sometimes|string',
-        ]);
-
-        $note->update($validatedData);
-        
-        return response()->json([
-            'message' => 'Nota actualizada exitosamente',
-            'data' => $note->fresh() 
-        ], 200);
     }
 
     /**
@@ -113,18 +154,23 @@ public function index(Request $request): JsonResponse
      */
     public function destroy(string $id): JsonResponse
     {
-        $note = Note::find($id);
+        try {
+            $note = Note::findOrFail($id);
+            $note->delete();
 
-        if (!$note) {
             return response()->json([
-                'message' => 'Nota no encontrada'
+                'message' => 'Note deleted successfully'
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'error' => 'Resource not found',
+                'message' => 'The note you are trying to delete does not exist'
             ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Internal server error',
+                'message' => 'The note could not be deleted'
+            ], 500);
         }
-        
-        $note->delete();
-        
-        return response()->json([
-            'message' => 'Nota eliminada exitosamente'
-        ], 200);
     }
 }

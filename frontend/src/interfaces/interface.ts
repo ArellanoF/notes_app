@@ -19,3 +19,14 @@ export interface SearchBarProps {
   searchTerm: string;
   handleClearSearch: () => void;
 }
+
+export interface BackendSuccessResponse<T = any> {
+  message?: string;
+  data?: T;
+}
+
+export interface BackendErrorResponse {
+  error?: string;
+  message?: string;
+  errors?: Record<string, string[]>;
+}
